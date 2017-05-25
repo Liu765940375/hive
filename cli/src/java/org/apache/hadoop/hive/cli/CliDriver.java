@@ -422,24 +422,34 @@ public class CliDriver {
   public static List<String> splitSemiColon(String line) {
     boolean insideSingleQuote = false;
     boolean insideDoubleQuote = false;
+    boolean insideComment = false;
     boolean escape = false;
     int beginIndex = 0;
     List<String> ret = new ArrayList<>();
     for (int index = 0; index < line.length(); index++) {
       if (line.charAt(index) == '\'') {
         // take a look to see if it is escaped
-        if (!escape) {
+        if (!escape && !insideComment) {
           // flip the boolean variable
           insideSingleQuote = !insideSingleQuote;
         }
       } else if (line.charAt(index) == '\"') {
         // take a look to see if it is escaped
-        if (!escape) {
+        if (!escape && !insideComment) {
           // flip the boolean variable
           insideDoubleQuote = !insideDoubleQuote;
         }
+      } else if (line.charAt(index) == '-') {
+        // escape the comment by tracking '--'
+        if (index < line.length() && !insideSingleQuote && !insideDoubleQuote && line.charAt(index+1) == '-'){
+          insideComment = true;
+        }
+      } else if (line.charAt(index) == '\n') {
+        if (insideComment == true){
+          insideComment = false;
+        }
       } else if (line.charAt(index) == ';') {
-        if (insideSingleQuote || insideDoubleQuote) {
+        if (insideSingleQuote || insideDoubleQuote || insideComment) {
           // do not split
         } else {
           // split, do not include ; itself
